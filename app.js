@@ -465,12 +465,79 @@ async function orders(){
 }
 function account(){
   if(!S.session) return auth();
-  return `<div class="card"><div class="kicker">AKUN ${esc((S.profile?.level||"buyer").toUpperCase())}</div><h2>${esc(S.profile?.full_name||"Javano User")}</h2><p class="muted">${esc(S.session.user.email)}</p></div>
-  <div class="card">
-    <div class="list-item"><span>No. HP</span><b>${esc(S.profile?.phone||"-")}</b></div>
-    <div class="list-item"><span>NIK</span><b>${maskNik(S.profile?.nik)}</b></div>
-    <div class="list-item"><span>Kode referral</span><b>${esc(S.profile?.referral_code||"-")}</b></div>
+ function account(){
+  if(!S.session) return auth();
+
+  const level = String(S.profile?.level || "buyer").toLowerCase();
+
+  const verificationBadge =
+    ["member","agent","agen","distributor"].includes(level)
+      ? (
+          S.profile?.verified
+            ? `<div style="margin:8px 0 14px">
+                 <span style="
+                   display:inline-flex;
+                   align-items:center;
+                   gap:6px;
+                   padding:7px 12px;
+                   border-radius:999px;
+                   background:#eaf8ef;
+                   border:1px solid #b8e3c5;
+                   font-weight:700;
+                   color:#0d6b3b;
+                 ">
+                   🛡️ ✓ Terverifikasi Javano ID
+                 </span>
+               </div>`
+            : `<div style="margin:8px 0 14px">
+                 <span style="
+                   display:inline-flex;
+                   align-items:center;
+                   gap:6px;
+                   padding:7px 12px;
+                   border-radius:999px;
+                   background:#fff8e6;
+                   border:1px solid #f0d28a;
+                   font-weight:700;
+                 ">
+                   ⏳ Belum Terverifikasi
+                 </span>
+               </div>`
+        )
+      : "";
+
+  return `
+    <div class="card">
+      <div class="kicker">
+        AKUN ${esc((S.profile?.level||"buyer").toUpperCase())}
+      </div>
+
+      <h2>${esc(S.profile?.full_name||"Javano User")}</h2>    <div class="card">
+      <div class="list-item">
+        <span>No. HP</span>
+        <b>${esc(S.profile?.phone||"-")}</b>
+      </div>
+
+     <h2>${esc(S.profile?.full_name||"Javano User")}</h2>
+
+${verificationBadge}
+
+<div class="card">
+  <div class="list-item">
+    <span>No. HP</span>
+    <b>${esc(S.profile?.phone||"-")}</b>
   </div>
+
+  <div class="list-item">
+    <span>NIK</span>
+    <b>${maskNik(S.profile?.nik)}</b>
+  </div>
+
+  <div class="list-item">
+    <span>Kode referral</span>
+    <b>${esc(S.profile?.referral_code||"-")}</b>
+  </div>
+</div>
   ${S.profile?.level!=="buyer" && S.profile?.role!=="admin"?`<button class="btn btn-outline" style="width:100%;margin-bottom:10px" onclick="go('wallet')">Poin & Penarikan</button>`:""}
   ${S.profile?.role==="admin"?`<button class="btn btn-gold" style="width:100%;margin-bottom:10px" onclick="go('admin')">Dashboard Admin</button>`:""}
   <button class="btn btn-danger" style="width:100%" onclick="logout()">Keluar</button>`;
