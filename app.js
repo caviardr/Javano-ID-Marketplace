@@ -73,8 +73,15 @@ async function loadProducts(){
   S.products=data||[];
 }
 function userPrice(p){
-  const level = String(S.profile?.level || "").toLowerCase();
+  const level = String(S.profile?.level || "buyer").toLowerCase();
+  const verified = Boolean(S.profile?.verified);
 
+  // Belum terverifikasi = harga umum
+  if(!verified){
+    return Number(p.price || 0);
+  }
+
+  // Member terverifikasi
   if(level==="member"){
     return Math.max(
       0,
@@ -82,10 +89,12 @@ function userPrice(p){
     );
   }
 
+  // Agen terverifikasi
   if((level==="agent" || level==="agen") && Number(p.agent_price || 0) > 0){
     return Number(p.agent_price);
   }
 
+  // Distributor terverifikasi
   if(level==="distributor" && Number(p.distributor_price || 0) > 0){
     return Number(p.distributor_price);
   }
@@ -256,25 +265,39 @@ function checkout(){
   if(!S.cart.length) return `<div class="empty">Keranjang kosong.</div>`;
 
   const level = String(S.profile?.level || "buyer").toLowerCase();
+  const verified = Boolean(S.profile?.verified);
   const depositPaid = Number(S.profile?.deposit_paid || 0);
 
   let depositRequired = 0;
   let depositLabel = "";
   let minimumQty = 0;
 
-  if(level === "member"){
-    depositRequired = 20000;
-    depositLabel = "Deposit Member";
-  }else if(level === "agent" || level === "agen"){
-    depositRequired = 200000;
-    depositLabel = "Deposit Agen";
-    minimumQty = 20;
-  }else if(level === "distributor"){
-    depositRequired = 1000000;
-    depositLabel = "Deposit Distributor";
-    minimumQty = 100;
-  }
+  if(verified && level === "member"){
+  depositRequired = 20000;
+  depositLabel = "Deposit Member";
 
+}else if(verified && (level === "agent" || level === "agen")){
+  depositRequired = 200000;
+  depositLabel = "Deposit Agen";
+  minimumQty = 20;
+
+}else if(verified && level === "distributor"){
+  depositRequired = 1000000;
+  depositLabel = "Deposit Distributor";
+  minimumQty = 100;
+}
+  const verificationInfo =
+  !verified && ["member","agent","agen","distributor"].includes(level)
+    ? `
+      <div class="card" style="margin-bottom:16px;border:1px solid #e9c66a;background:#fffaf0">
+        <b>⏳ Akun Belum Terverifikasi</b>
+        <div class="muted" style="margin-top:6px">
+          Harga khusus ${level==="member" ? "Member" : level==="distributor" ? "Distributor" : "Agen"}
+          akan aktif setelah verifikasi Admin.
+        </div>
+      </div>
+    `
+    : "";
   const depositDue = Math.max(depositRequired - depositPaid, 0);
 
   const subtotal = S.cart.reduce((a,c)=>{
@@ -317,6 +340,7 @@ function checkout(){
     <div class="section-title">
       <h2>Checkout</h2>
     </div>
+    ${verificationInfo}
 
     ${activationInfo}
 
