@@ -254,22 +254,161 @@ window.logout=async()=>{ if(sb) await sb.auth.signOut(); S.page="home"; render()
 function checkout(){
   if(!S.session) return auth("Silakan masuk terlebih dahulu sebelum checkout.");
   if(!S.cart.length) return `<div class="empty">Keranjang kosong.</div>`;
-  const total=S.cart.reduce((a,c)=>{const p=S.products.find(x=>x.id===c.id);return a+(p?userPrice(p)*c.qty:0)},0);
-  return `<div class="section-title"><h2>Checkout</h2></div>
-  <form class="card form-grid" onsubmit="placeOrder(event)">
-    <div class="form-grid two">
-      <div class="field"><label>Nama penerima</label><input name="recipient" required value="${esc(S.profile?.full_name||"")}"></div>
-      <div class="field"><label>No. HP</label><input name="phone" required value="${esc(S.profile?.phone||"")}"></div>
+
+  const level = String(S.profile?.level || "buyer").toLowerCase();
+  const depositPaid = Number(S.profile?.deposit_paid || 0);
+
+  let depositRequired = 0;
+  let depositLabel = "";
+  let minimumQty = 0;
+
+  if(level === "member"){
+    depositRequired = 20000;
+    depositLabel = "Deposit Member";
+  }else if(level === "agent" || level === "agen"){
+    depositRequired = 200000;
+    depositLabel = "Deposit Agen";
+    minimumQty = 20;
+  }else if(level === "distributor"){
+    depositRequired = 1000000;
+    depositLabel = "Deposit Distributor";
+    minimumQty = 100;
+  }
+
+  const depositDue = Math.max(depositRequired - depositPaid, 0);
+
+  const subtotal = S.cart.reduce((a,c)=>{
+    const p = S.products.find(x=>x.id===c.id);
+    return a + (p ? userPrice(p) * Number(c.qty || 0) : 0);
+  },0);
+
+  const totalQty = S.cart.reduce(
+    (a,c)=>a + Number(c.qty || 0),
+    0
+  );
+
+  const grandTotal = subtotal + depositDue;
+
+  let activationInfo = "";
+
+  if(depositDue > 0 && minimumQty > 0){
+    const remaining = Math.max(minimumQty - totalQty,0);
+
+    activationInfo = `
+      <div class="card" style="margin-bottom:16px">
+        <b>Aktivasi ${level==="distributor" ? "Distributor" : "Agen"}</b>
+        <div class="muted" style="margin-top:6px">
+          Pembelian awal minimal ${minimumQty} slop.
+          Keranjang saat ini: <b>${totalQty} slop</b>.
+          ${
+            remaining > 0
+              ? `Tambahkan <b>${remaining} slop</b> lagi.`
+              : `Syarat minimum pembelian sudah terpenuhi.`
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  const canCheckout =
+    !(depositDue > 0 && minimumQty > 0 && totalQty < minimumQty);
+
+  return `
+    <div class="section-title">
+      <h2>Checkout</h2>
     </div>
-    <div class="field"><label>Alamat lengkap</label><textarea name="address" rows="3" required></textarea></div>
-    <div class="form-grid two">
-      <div class="field"><label>Kode Pos</label><input name="postal_code" required></div>
-      <div class="field"><label>Ekspedisi</label><select name="shipping"><option>J&T Express</option><option>JNE</option><option>Paxel</option><option>JNE Cargo</option><option>Pos Indonesia</option></select></div>
-    </div>
-    <div class="field"><label>Virtual Account</label><select name="va_bank"><option>BCA VA</option><option>BNI VA</option><option>BRI VA</option><option>Mandiri VA</option><option>Permata VA</option></select><div class="small muted">Nomor VA live aktif setelah payment gateway diintegrasikan.</div></div>
-    <div class="list-item"><span>Subtotal</span><b class="money">${rp(total)}</b></div>
-    <button class="btn btn-green">Buat Pesanan</button>
-  </form>`;
+
+    ${activationInfo}
+
+    <form class="card form-grid" onsubmit="placeOrder(event)">
+
+      <div class="form-grid two">
+        <div class="field">
+          <label>Nama penerima</label>
+          <input
+            name="recipient"
+            required
+            value="${esc(S.profile?.full_name||"")}"
+          >
+        </div>
+
+        <div class="field">
+          <label>No. HP</label>
+          <input
+            name="phone"
+            required
+            value="${esc(S.profile?.phone||"")}"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Alamat lengkap</label>
+        <textarea name="address" rows="3" required></textarea>
+      </div>
+
+      <div class="form-grid two">
+        <div class="field">
+          <label>Kode Pos</label>
+          <input name="postal_code" required>
+        </div>
+
+        <div class="field">
+          <label>Ekspedisi</label>
+          <select name="shipping">
+            <option>J&T</option>
+            <option>JNE</option>
+            <option>Paxel</option>
+            <option>JNE Cargo</option>
+            <option>Pos Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Virtual Account</label>
+        <select name="va_bank">
+          <option>BCA VA</option>
+          <option>BNI VA</option>
+          <option>BRI VA</option>
+          <option>Mandiri VA</option>
+        </select>
+      </div>
+
+      <div class="list-item">
+        <span>Subtotal Produk</span>
+        <b class="money">${rp(subtotal)}</b>
+      </div>
+
+      ${
+        depositDue > 0
+          ? `
+            <div class="list-item">
+              <span>${depositLabel}</span>
+              <b class="money">${rp(depositDue)}</b>
+            </div>
+          `
+          : ""
+      }
+
+      <div class="list-item">
+        <span><b>Total Pembayaran</b></span>
+        <b class="money">${rp(grandTotal)}</b>
+      </div>
+
+      ${
+        canCheckout
+          ? `<button class="btn btn-green">Buat Pesanan</button>`
+          : `
+            <button class="btn btn-green" type="button" disabled
+              style="opacity:.5;cursor:not-allowed">
+              Minimum ${minimumQty} Slop Belum Terpenuhi
+            </button>
+          `
+      }
+
+    </form>
+  `;
 }
 window.placeOrder=async e=>{
   e.preventDefault(); if(!sb) return toast("Supabase belum terhubung.");
