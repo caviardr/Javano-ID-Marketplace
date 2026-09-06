@@ -73,10 +73,24 @@ async function loadProducts(){
   S.products=data||[];
 }
 function userPrice(p){
-  if(S.profile?.level==="member") return Math.max(0,Number(p.price)-Number(p.member_discount||2000));
-  if(S.profile?.level==="agent" && p.agent_price) return Number(p.agent_price);
-  if(S.profile?.level==="distributor" && p.distributor_price) return Number(p.distributor_price);
-  return Number(p.price||0);
+  const level = String(S.profile?.level || "").toLowerCase();
+
+  if(level==="member"){
+    return Math.max(
+      0,
+      Number(p.price || 0) - Number(p.member_discount || 2000)
+    );
+  }
+
+  if((level==="agent" || level==="agen") && Number(p.agent_price || 0) > 0){
+    return Number(p.agent_price);
+  }
+
+  if(level==="distributor" && Number(p.distributor_price || 0) > 0){
+    return Number(p.distributor_price);
+  }
+
+  return Number(p.price || 0);
 }
 function nav(){
   const n=$("#bottomNav"); if(!n) return;
