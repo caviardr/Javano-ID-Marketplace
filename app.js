@@ -504,20 +504,65 @@ async function admin(){
 window.adminSection=async sec=>{
   if(!sb || S.profile?.role!=="admin") return;
   let html=`<div class="section-title"><h2>Admin • ${esc(sec)}</h2></div>${adminNav()}`;
-  if(sec==="members"){
-    const {data,error}=await sb.from("admin_network_view").select("*").order("joined_at",{ascending:false});
-    if(error) html+=`<div class="card danger">${esc(error.message)}</div>`;
-    else html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Level</th><th>HP</th><th>NIK</th><th>Kode</th><th>Upline</th><th>Level Upline</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.member_name)}</td><td>${esc(x.member_level)}</td><td>${esc(x.phone)}</td><td>${maskNik(x.nik)}</td><td>${esc(x.referral_code||"-")}</td><td>${esc(x.upline_name||"-")}</td><td>${esc(x.upline_level||"-")}</td></tr>`).join("")}</tbody></table></div>`;
-  } else if(sec==="codes"){
-    const {data}=await sb.from("admin_referral_codes_view").select("*").order("created_at",{ascending:false});
-    html+=`<div class="card"><h3>Buat Kode Upline Custom</h3><form class="form-grid two" onsubmit="createCode(event)"><div class="field"><label>Email pemilik/upline</label><input type="email" name="email" required></div><div class="field"><label>Kode</label><input name="code" required placeholder="JAVANO-MALANG"></div><button class="btn btn-green">Buat Kode</button></form></div>
-    <div class="card table-wrap"><table class="table"><thead><tr><th>Kode</th><th>Pemilik</th><th>Level</th><th>Aktif</th><th>Pemakai</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.owner_name)}</td><td>${esc(x.owner_level)}</td><td>${x.active?"Ya":"Tidak"}</td><td>${x.uses_count||0}</td></tr>`).join("")}</tbody></table></div>`;
-  } else if(sec==="orders"){
-    const {data}=await sb.from("admin_orders_view").select("*").order("created_at",{ascending:false});
-    html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Order</th><th>Pembeli</th><th>Upline</th><th>Total</th><th>Ekspedisi</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.order_no)}</td><td>${esc(x.buyer_name)}</td><td>${esc(x.upline_name||"-")}</td><td>${rp(x.total)}</td><td>${esc(x.shipping_method||"-")}</td><td>${esc(x.status)}</td><td><button class="btn btn-outline" onclick="orderStatus('${x.id}')">Ubah</button></td></tr>`).join("")}</tbody></table></div>`;
-  } else if(sec==="products"){
-  const {data,error}=await sb.from("products").select("*").order("name");
+ if(sec==="members"){
+  const {data,error}=await sb
+    .from("admin_network_view")
+    .select("*")
+    .order("joined_at",{ascending:false});
 
+  if(error){
+    html+=`<div class="card danger">${esc(error.message)}</div>`;
+  }else{
+    html+=`
+      <div class="card table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Level</th>
+              <th>HP</th>
+              <th>Kode</th>
+              <th>Upline</th>
+              <th>Verifikasi</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(data||[]).map(x=>`
+              <tr>
+                <td>${esc(x.downline_name || "-")}</td>
+                <td>${esc(x.downline_level || "-")}</td>
+                <td>${esc(x.downline_phone || "-")}</td>
+                <td>${esc(x.downline_referral_code || "-")}</td>
+                <td>${esc(x.upline_name || "-")}</td>
+
+                <td>
+                  ${x.downline_verified
+                    ? `<span>✅ <b>Terverifikasi</b></span>`
+                    : `<span>⏳ Belum Terverifikasi</span>`
+                  }
+                </td>
+
+                <td>
+                  ${x.downline_verified
+                    ? `<button class="btn btn-outline"
+                         onclick="setVerified('${x.downline_id}',false)">
+                         Batalkan
+                       </button>`
+                    : `<button class="btn btn-green"
+                         onclick="setVerified('${x.downline_id}',true)">
+                         ✓ Verifikasi
+                       </button>`
+                  }
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
   if(error){
     html+=`<div class="card">Gagal memuat produk: ${esc(error.message)}</div>`;
   }else{
@@ -679,4 +724,24 @@ window.editProduct=async id=>{
   }else{
     location.reload();
   }
+};
+window.setVerified=async(id,status)=>{
+  if(!sb) return toast("Supabase belum terhubung.");
+
+  const {error}=await sb.rpc("admin_set_verified",{
+    p_profile_id:id,
+    p_verified:status
+  });
+
+  if(error){
+    return toast(error.message);
+  }
+
+  toast(
+    status
+      ? "Akun berhasil diverifikasi."
+      : "Verifikasi akun berhasil dibatalkan."
+  );
+
+  adminSection("members");
 };
