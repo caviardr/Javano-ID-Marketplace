@@ -437,7 +437,26 @@ function checkout(){
 window.placeOrder=async e=>{
   e.preventDefault(); if(!sb) return toast("Supabase belum terhubung.");
   const f=new FormData(e.target);
-  const items=S.cart.map(c=>{const p=S.products.find(x=>x.id===c.id);return {product_id:p.id,qty:c.qty,unit_price:userPrice(p),points_each:Number(p.points||500)}});
+  const items=S.cart.map(c=>{
+  const p=S.products.find(x=>x.id===c.id);
+  if(!p) return null;
+
+  return {
+    product_id:p.id,
+    qty:Number(c.qty||0),
+    unit_price:userPrice(p),
+    points_each:Number(p.points||500)
+  };
+}).filter(Boolean);
+
+if(!items.length){
+  S.cart=[];
+  saveCart();
+  return toast("Produk di keranjang sudah tidak tersedia. Silakan pilih produk kembali.");
+}if(items.length !== S.cart.length){
+  S.cart=S.cart.filter(c=>S.products.some(p=>p.id===c.id));
+  saveCart();
+}
   const {error}=await sb.rpc("create_order",{p_items:items,p_recipient:f.get("recipient"),p_phone:f.get("phone"),p_address:f.get("address"),p_postal_code:f.get("postal_code"),p_shipping:f.get("shipping"),p_va_bank:f.get("va_bank")});
   if(error) return toast(error.message);
   S.cart=[]; saveCart(); toast("Pesanan berhasil dibuat"); go("orders");
