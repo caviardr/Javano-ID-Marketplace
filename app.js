@@ -59,11 +59,11 @@ async function loadProfile(){
 async function loadProducts(){
   if(!sb){
     S.products=[
-      {id:"demo-tm",name:"TM",price:140000,stock:49,points:500,member_discount:2000},
-      {id:"demo-nat",name:"TM NAT E",price:180000,stock:2,points:500,member_discount:2000},
-      {id:"demo-hab",name:"ASSIKA HABBATS",price:250000,stock:47.5,points:500,member_discount:2000},
-      {id:"demo-gold",name:"ASSIKA GOLD",price:350000,stock:1,points:500,member_discount:2000},
-      {id:"demo-ck",name:"CK",price:230000,stock:3,points:500,member_discount:2000}
+      {id:"demo-tm",name:"Tani Madjoe (TM)",price:125000,stock:49,points:500,member_discount:2000},
+      {id:"demo-nat",name:"TM Nat E",price:165000,stock:2,points:500,member_discount:2000},
+      {id:"demo-hab",name:"Ashika Habbat",price:225000,stock:47.5,points:500,member_discount:2000},
+      {id:"demo-gold",name:"Ashika Gold",price:320000,stock:1,points:500,member_discount:2000},
+      {id:"demo-ck",name:"CK",price:200000,stock:3,points:500,member_discount:2000}
     ]; return;
   }
   const {data,error}=await sb.from("products").select("*").eq("active",true).order("name");
@@ -86,10 +86,10 @@ function productCard(p){
     <div class="product-thumb"><img src="./assets/icon-192.png" alt="${esc(p.name)}"></div>
     <h3>${esc(p.name)}</h3>
     <div class="price">${rp(userPrice(p))}</div>
-    <div class="meta">Stok ${p.stock} slop • ${p.points||500} poin untuk upline</div>
+    <div class="meta">${p.points||500} poin untuk upline</div>
     <div class="actions">
       <button class="btn btn-outline" onclick="detail('${p.id}')">Detail</button>
-      <button class="btn btn-red" onclick="addCart('${p.id}')">+ Keranjang</button>
+      <button class="btn btn-green" onclick="addCart('${p.id}')">+ Keranjang</button>
     </div>
   </article>`;
 }
@@ -108,7 +108,7 @@ window.detail=id=>{
     <h2 style="margin:12px 0 4px">${esc(p.name)}</h2>
     <div class="price" style="font-size:27px">${rp(userPrice(p))}</div>
     <p class="muted">Produk herbal pilihan Javano ID Marketplace.</p>
-    <button class="btn btn-red" onclick="addCart('${p.id}')">Tambah ke Keranjang</button>
+    <button class="btn btn-green" onclick="addCart('${p.id}')">Tambah ke Keranjang</button>
   </div>`;
 };
 
@@ -136,7 +136,7 @@ function catalog(){
   <div class="grid">${S.products.map(productCard).join("")}</div>`;
 }
 function cart(){
-  if(!S.cart.length) return `<div class="empty"><h2>Keranjang masih kosong</h2><p>Pilih produk Javano ID yang ingin dibeli.</p><button class="btn btn-red" onclick="go('catalog')">Lihat Produk</button></div>`;
+  if(!S.cart.length) return `<div class="empty"><h2>Keranjang masih kosong</h2><p>Pilih produk Javano ID yang ingin dibeli.</p><button class="btn btn-green" onclick="go('catalog')">Lihat Produk</button></div>`;
   let total=0;
   const rows=S.cart.map(c=>{
     const p=S.products.find(x=>x.id===c.id); if(!p) return "";
@@ -151,7 +151,7 @@ function cart(){
   }).join("");
   return `<div class="section-title"><h2>Keranjang</h2></div><div class="card">${rows}
     <div class="list-item"><b>Subtotal</b><b class="money">${rp(total)}</b></div>
-    <button class="btn btn-red" style="width:100%;margin-top:12px" onclick="go('checkout')">Lanjut Checkout</button>
+    <button class="btn btn-green" style="width:100%;margin-top:12px" onclick="go('checkout')">Lanjut Checkout</button>
   </div>`;
 }
 window.changeQty=(id,d)=>{
@@ -166,7 +166,7 @@ function auth(note=""){
       <form class="form-grid" onsubmit="login(event)">
         <div class="field"><label>Email</label><input name="email" type="email" required></div>
         <div class="field"><label>Password</label><input name="password" type="password" required></div>
-        <button class="btn btn-red">Masuk</button>
+        <button class="btn btn-green">Masuk</button>
       </form>
     </div>
     <div class="card"><h2>Daftar Akun</h2>
@@ -240,7 +240,7 @@ function checkout(){
     </div>
     <div class="field"><label>Virtual Account</label><select name="va_bank"><option>BCA VA</option><option>BNI VA</option><option>BRI VA</option><option>Mandiri VA</option><option>Permata VA</option></select><div class="small muted">Nomor VA live aktif setelah payment gateway diintegrasikan.</div></div>
     <div class="list-item"><span>Subtotal</span><b class="money">${rp(total)}</b></div>
-    <button class="btn btn-red">Buat Pesanan</button>
+    <button class="btn btn-green">Buat Pesanan</button>
   </form>`;
 }
 window.placeOrder=async e=>{
@@ -274,7 +274,7 @@ async function wallet(){
   const pts=Number(S.profile?.points_available||0), rupiah=pts*C.POINT_TO_RUPIAH;
   return `<div class="section-title"><h2>Poin & Penarikan</h2></div>
   <div class="metric-grid"><div class="metric"><b>${pts.toLocaleString("id-ID")}</b><span>Poin tersedia</span></div><div class="metric"><b>${rp(rupiah)}</b><span>Setara rupiah</span></div></div>
-  <div class="card"><h3>Tarik Reward</h3><p class="muted">Minimum penarikan ${rp(C.MIN_WITHDRAW_RUPIAH)}.</p><button class="btn btn-red" ${rupiah<C.MIN_WITHDRAW_RUPIAH?"disabled":""} onclick="withdraw()">Ajukan Penarikan</button></div>`;
+  <div class="card"><h3>Tarik Reward</h3><p class="muted">Minimum penarikan ${rp(C.MIN_WITHDRAW_RUPIAH)}.</p><button class="btn btn-green" ${rupiah<C.MIN_WITHDRAW_RUPIAH?"disabled":""} onclick="withdraw()">Ajukan Penarikan</button></div>`;
 }
 window.withdraw=async()=>{
   if(!sb) return;
@@ -310,7 +310,7 @@ function account(){
 }
 function support(){
   const wa=C.CS_WHATSAPP.replace(/\D/g,"");
-  return `<div class="section-title"><h2>CS Admin</h2></div><div class="card"><div class="kicker">CUSTOMER SERVICE</div><h2>Ada yang bisa kami bantu?</h2><p class="muted">Bantuan pesanan, pembayaran VA, pengiriman, referral dan reward.</p><button class="btn btn-red" onclick="window.open('https://wa.me/${wa}?text='+encodeURIComponent('Halo CS Javano ID, saya butuh bantuan.'),'_blank')">Hubungi WhatsApp CS</button></div>`;
+  return `<div class="section-title"><h2>CS Admin</h2></div><div class="card"><div class="kicker">CUSTOMER SERVICE</div><h2>Ada yang bisa kami bantu?</h2><p class="muted">Bantuan pesanan, pembayaran VA, pengiriman, referral dan reward.</p><button class="btn btn-green" onclick="window.open('https://wa.me/${wa}?text='+encodeURIComponent('Halo CS Javano ID, saya butuh bantuan.'),'_blank')">Hubungi WhatsApp CS</button></div>`;
 }
 
 function adminNav(){
@@ -342,7 +342,7 @@ window.adminSection=async sec=>{
     else html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Level</th><th>HP</th><th>NIK</th><th>Kode</th><th>Upline</th><th>Level Upline</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.member_name)}</td><td>${esc(x.member_level)}</td><td>${esc(x.phone)}</td><td>${maskNik(x.nik)}</td><td>${esc(x.referral_code||"-")}</td><td>${esc(x.upline_name||"-")}</td><td>${esc(x.upline_level||"-")}</td></tr>`).join("")}</tbody></table></div>`;
   } else if(sec==="codes"){
     const {data}=await sb.from("admin_referral_codes_view").select("*").order("created_at",{ascending:false});
-    html+=`<div class="card"><h3>Buat Kode Upline Custom</h3><form class="form-grid two" onsubmit="createCode(event)"><div class="field"><label>Email pemilik/upline</label><input type="email" name="email" required></div><div class="field"><label>Kode</label><input name="code" required placeholder="JAVANO-MALANG"></div><button class="btn btn-red">Buat Kode</button></form></div>
+    html+=`<div class="card"><h3>Buat Kode Upline Custom</h3><form class="form-grid two" onsubmit="createCode(event)"><div class="field"><label>Email pemilik/upline</label><input type="email" name="email" required></div><div class="field"><label>Kode</label><input name="code" required placeholder="JAVANO-MALANG"></div><button class="btn btn-green">Buat Kode</button></form></div>
     <div class="card table-wrap"><table class="table"><thead><tr><th>Kode</th><th>Pemilik</th><th>Level</th><th>Aktif</th><th>Pemakai</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td><b>${esc(x.code)}</b></td><td>${esc(x.owner_name)}</td><td>${esc(x.owner_level)}</td><td>${x.active?"Ya":"Tidak"}</td><td>${x.uses_count||0}</td></tr>`).join("")}</tbody></table></div>`;
   } else if(sec==="orders"){
     const {data}=await sb.from("admin_orders_view").select("*").order("created_at",{ascending:false});
@@ -352,7 +352,7 @@ window.adminSection=async sec=>{
     html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Produk</th><th>Harga</th><th>Stok</th><th>Poin</th><th>Diskon Member</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${rp(x.price)}</td><td>${x.stock}</td><td>${x.points}</td><td>${rp(x.member_discount)}</td></tr>`).join("")}</tbody></table></div>`;
   } else if(sec==="withdraw"){
     const {data}=await sb.from("admin_withdrawals_view").select("*").order("created_at",{ascending:false});
-    html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Poin</th><th>Nominal</th><th>Tujuan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.full_name)}</td><td>${x.points}</td><td>${rp(x.amount_rupiah)}</td><td>${esc(x.destination)}</td><td>${esc(x.status)}</td><td>${x.status==="pending"?`<button class="btn btn-red" onclick="approveWithdrawal('${x.id}')">Tandai Dibayar</button>`:"-"}</td></tr>`).join("")}</tbody></table></div>`;
+    html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Poin</th><th>Nominal</th><th>Tujuan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.full_name)}</td><td>${x.points}</td><td>${rp(x.amount_rupiah)}</td><td>${esc(x.destination)}</td><td>${esc(x.status)}</td><td>${x.status==="pending"?`<button class="btn btn-green" onclick="approveWithdrawal('${x.id}')">Tandai Dibayar</button>`:"-"}</td></tr>`).join("")}</tbody></table></div>`;
   }
   $("#app").innerHTML=html;
 };
