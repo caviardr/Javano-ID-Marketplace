@@ -1,0 +1,1 @@
+Deno.serve(()=>new Response(JSON.stringify({ok:false,message:'Payment gateway belum dikonfigurasi. Simpan secret merchant di Supabase Secrets.'}),{status:501,headers:{'content-type':'application/json'}}));
