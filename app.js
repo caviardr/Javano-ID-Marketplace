@@ -362,9 +362,50 @@ window.adminSection=async sec=>{
     const {data}=await sb.from("admin_orders_view").select("*").order("created_at",{ascending:false});
     html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Order</th><th>Pembeli</th><th>Upline</th><th>Total</th><th>Ekspedisi</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.order_no)}</td><td>${esc(x.buyer_name)}</td><td>${esc(x.upline_name||"-")}</td><td>${rp(x.total)}</td><td>${esc(x.shipping_method||"-")}</td><td>${esc(x.status)}</td><td><button class="btn btn-outline" onclick="orderStatus('${x.id}')">Ubah</button></td></tr>`).join("")}</tbody></table></div>`;
   } else if(sec==="products"){
-    const {data}=await sb.from("products").select("*").order("name");
-    html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Produk</th><th>Harga</th><th>Stok</th><th>Poin</th><th>Diskon Member</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.name)}</td><td>${rp(x.price)}</td><td>${x.stock}</td><td>${x.points}</td><td>${rp(x.member_discount)}</td></tr>`).join("")}</tbody></table></div>`;
-  } else if(sec==="withdraw"){
+  const {data,error}=await sb.from("products").select("*").order("name");
+
+  if(error){
+    html+=`<div class="card">Gagal memuat produk: ${esc(error.message)}</div>`;
+  }else{
+    html+=`
+      <div class="card table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produk</th>
+              <th>Harga Umum</th>
+              <th>Harga Agen</th>
+              <th>Harga Distributor</th>
+              <th>Stok</th>
+              <th>Poin</th>
+              <th>Diskon Member</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(data||[]).map(p=>`
+              <tr>
+                <td>${esc(p.name)}</td>
+                <td>${rp(p.price)}</td>
+                <td>${rp(p.agent_price)}</td>
+                <td>${rp(p.distributor_price)}</td>
+                <td>${Number(p.stock||0)}</td>
+                <td>${Number(p.points||0)}</td>
+                <td>${rp(p.member_discount)}</td>
+                <td>${p.active ? "Aktif" : "Nonaktif"}</td>
+                <td>
+                  <button class="btn" onclick="editProduct('${p.id}')">
+                    ✏️ Edit
+                  </button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>`;
+  }
+} else if(sec==="withdraw"){
     const {data}=await sb.from("admin_withdrawals_view").select("*").order("created_at",{ascending:false});
     html+=`<div class="card table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Poin</th><th>Nominal</th><th>Tujuan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${esc(x.full_name)}</td><td>${x.points}</td><td>${rp(x.amount_rupiah)}</td><td>${esc(x.destination)}</td><td>${esc(x.status)}</td><td>${x.status==="pending"?`<button class="btn btn-green" onclick="approveWithdrawal('${x.id}')">Tandai Dibayar</button>`:"-"}</td></tr>`).join("")}</tbody></table></div>`;
   }
@@ -406,3 +447,82 @@ async function render(){
   nav(); saveCart();
 }
 init();
+window.editProduct=async id=>{
+  if(!sb) return toast("Supabase belum terhubung.");
+
+  const {data:p,error}=await sb
+    .from("products")
+    .select("*")
+    .eq("id",id)
+    .single();
+
+  if(error || !p){
+    return toast("Produk tidak ditemukan.");
+  }
+
+  const price=prompt(
+    "Harga Umum:",
+    Number(p.price||0)
+  );
+  if(price===null) return;
+
+  const memberDiscount=prompt(
+    "Diskon Member:",
+    Number(p.member_discount||0)
+  );
+  if(memberDiscount===null) return;
+
+  const agentPrice=prompt(
+    "Harga Agen:",
+    Number(p.agent_price||0)
+  );
+  if(agentPrice===null) return;
+
+  const distributorPrice=prompt(
+    "Harga Distributor:",
+    Number(p.distributor_price||0)
+  );
+  if(distributorPrice===null) return;
+
+  const stock=prompt(
+    "Stok (slop):",
+    Number(p.stock||0)
+  );
+  if(stock===null) return;
+
+  const points=prompt(
+    "Poin per slop:",
+    Number(p.points||0)
+  );
+  if(points===null) return;
+
+  const active=confirm(
+    "Klik OK jika produk AKTIF.\nKlik Cancel jika produk NONAKTIF."
+  );
+
+  const {error:updateError}=await sb.rpc(
+    "admin_update_product",
+    {
+      p_product_id:id,
+      p_price:Number(price),
+      p_member_discount:Number(memberDiscount),
+      p_agent_price:Number(agentPrice),
+      p_distributor_price:Number(distributorPrice),
+      p_stock:Number(stock),
+      p_points:Number(points),
+      p_active:active
+    }
+  );
+
+  if(updateError){
+    return toast(updateError.message);
+  }
+
+  toast("Produk berhasil diperbarui.");
+
+  if(typeof renderAdmin==="function"){
+    renderAdmin("products");
+  }else{
+    location.reload();
+  }
+};
