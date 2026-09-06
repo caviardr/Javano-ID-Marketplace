@@ -562,7 +562,102 @@ window.adminSection=async sec=>{
       </div>
     `;
   }
+}else if(sec==="codes"){
+  const {data}=await sb
+    .from("admin_referral_codes_view")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  html+=`
+    <div class="card">
+      <h3>Buat Kode Upline Custom</h3>
+      <form class="form-grid two" onsubmit="createCode(event)">
+        <div class="field">
+          <label>Email pemilik/upline</label>
+          <input type="email" name="email" required>
+        </div>
+
+        <div class="field">
+          <label>Kode</label>
+          <input name="code" required placeholder="JAVANO-MALANG">
+        </div>
+
+        <button class="btn btn-green">Buat Kode</button>
+      </form>
+    </div>
+
+    <div class="card table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Pemilik</th>
+            <th>Level</th>
+            <th>Aktif</th>
+            <th>Pemakai</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(data||[]).map(x=>`
+            <tr>
+              <td><b>${esc(x.code)}</b></td>
+              <td>${esc(x.owner_name)}</td>
+              <td>${esc(x.owner_level)}</td>
+              <td>${x.active ? "Ya" : "Tidak"}</td>
+              <td>${x.uses_count||0}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
+
+else if(sec==="orders"){
+  const {data}=await sb
+    .from("admin_orders_view")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  html+=`
+    <div class="card table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Pembeli</th>
+            <th>Upline</th>
+            <th>Total</th>
+            <th>Ekspedisi</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${(data||[]).map(x=>`
+            <tr>
+              <td>${esc(x.order_no)}</td>
+              <td>${esc(x.buyer_name)}</td>
+              <td>${esc(x.upline_name||"-")}</td>
+              <td>${rp(x.total)}</td>
+              <td>${esc(x.shipping_method||"-")}</td>
+              <td>${esc(x.status)}</td>
+              <td>
+                <button class="btn btn-outline"
+                  onclick="orderStatus('${x.id}')">
+                  Ubah
+                </button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+  else if(sec==="products"){
+  const {data,error}=await sb.from("products").select("*").order("name");
   if(error){
     html+=`<div class="card">Gagal memuat produk: ${esc(error.message)}</div>`;
   }else{
