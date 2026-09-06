@@ -33,6 +33,7 @@ function saveCart(){
 }
 function go(page){ S.page=page; render(); window.scrollTo({top:0,behavior:"smooth"}); }
 window.go=go;
+window.marketSearch=value=>{const q=String(value||"").toLowerCase().trim();document.querySelectorAll(".product").forEach(card=>card.style.display=!q||card.textContent.toLowerCase().includes(q)?"":"none");};
 
 async function init(){
   saveCart();

@@ -3,8 +3,8 @@
   "short_name": "Javano ID",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#9E1117",
+  "background_color": "#fffdf8",
+  "theme_color": "#075a35",
   "icons": [
     {
       "src": "assets/icon-192.png",
