@@ -3,7 +3,8 @@ const RAW = window.JAVANO_MARKET_CONFIG || window.JAVANO_CONFIG || {};
 const C = {
   SUPABASE_URL: RAW.SUPABASE_URL || "",
   SUPABASE_KEY: RAW.SUPABASE_PUBLISHABLE_KEY || RAW.SUPABASE_ANON_KEY || "",
-  CS_WHATSAPP: RAW.CS_WHATSAPP || "6280000000000",
+  APP_URL: RAW.APP_URL || "https://caviardr.github.io/Javano-ID-Marketplace/",
+  CS_WHATSAPP: RAW.CS_WHATSAPP || "6281511060808",
   POINT_TO_RUPIAH: Number(RAW.POINT_TO_RUPIAH || 1),
   MIN_WITHDRAW_RUPIAH: Number(RAW.MIN_WITHDRAW_RUPIAH || 100000)
 };
@@ -219,8 +220,20 @@ window.register=async e=>{
   const f=new FormData(e.target), level=f.get("level");
   const meta={full_name:f.get("full_name"),phone:f.get("phone"),level,
     nik:level==="buyer"?null:f.get("nik"),upline_code:level==="buyer"?null:f.get("upline_code")};
-  const {error}=await sb.auth.signUp({email:f.get("email"),password:f.get("password"),options:{data:meta}});
-  if(error) toast(error.message); else toast("Registrasi berhasil. Silakan cek email bila verifikasi aktif.");
+  const {error}=await sb.auth.signUp({
+  email: f.get("email"),
+  password: f.get("password"),
+  options: {
+    data: meta,
+    emailRedirectTo: C.APP_URL
+  }
+});
+
+if(error) {
+  toast(error.message);
+} else {
+  toast("Registrasi berhasil. Silakan cek email untuk verifikasi.");
+}
 };
 window.logout=async()=>{ if(sb) await sb.auth.signOut(); S.page="home"; render(); };
 
