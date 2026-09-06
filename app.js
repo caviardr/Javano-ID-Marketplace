@@ -335,6 +335,7 @@ function adminNav(){
     <button class="btn btn-outline" onclick="adminSection('orders')">Pesanan</button>
     <button class="btn btn-outline" onclick="adminSection('products')">Produk</button>
     <button class="btn btn-outline" onclick="adminSection('withdraw')">Withdrawal</button>
+    <button class="btn btn-outline" onclick="logout()">🚪 Logout</button>
   </div>`;
 }
 async function admin(){
